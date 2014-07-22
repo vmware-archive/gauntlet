@@ -22,15 +22,17 @@ curl -X POST -d '{
 
 Fields:
 
-|field    |Required|type| description |
-|------------|--------|-----------|
-|pipeline|no|string| name of pipeline |
-|pipecount|no|positive integer| GoCD run count|
-|stage|no|string| name of pipeline stage |
-|stagecount|no|positive integer| GoCD stage run count |
-|jobname|yes|string| name of job |
-|gitinfo|no|string; possibly json| repo and revision |
-|pass|yes| 'true' or 'false'| success of run |
+
+| field    |Required|type| description |
+| ------------|--------|-----------|
+| pipeline|no|string| name of pipeline |
+| pipecount|no|positive integer| GoCD run count|
+| stage|no|string| name of pipeline stage |
+| stagecount|no|positive integer| GoCD stage run count |
+| jobname|yes|string| name of job |
+| gitinfo|no|string; possibly json| repo and revision |
+| pass|yes| 'true' or 'false'| success of run |
+
 
 Response on success:
 
