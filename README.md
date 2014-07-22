@@ -24,7 +24,7 @@ Fields:
 
 
 | field    |Required|type| description |
-| ------------|--------|-----------|
+| ------------|--------|-----------|-----|
 | pipeline|no|string| name of pipeline |
 | pipecount|no|positive integer| GoCD run count|
 | stage|no|string| name of pipeline stage |
