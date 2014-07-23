@@ -7,18 +7,18 @@ import (
 	"io"
 	"net/http"
 	"os"
-	"strconv"
 	"os/exec"
+	"strconv"
 )
 
 type Result struct {
-	Pipeline  string `json:"pipeline"`
-	Pipecount int    `json:"pipecount"`
-	Stage     string  `json:"stage"`
+	Pipeline   string `json:"pipeline"`
+	Pipecount  int    `json:"pipecount"`
+	Stage      string `json:"stage"`
 	Stagecount int    `json:"stagecount"`
-	Jobname   string  `json:"jobname"`
-	Gitinfo   string  `json:"gitinfo"`
-	Pass      bool    `json:"pass"`
+	Jobname    string `json:"jobname"`
+	Gitinfo    string `json:"gitinfo"`
+	Pass       bool   `json:"pass"`
 }
 
 func toInt(a string) int {
@@ -29,17 +29,30 @@ func toInt(a string) int {
 	return val
 }
 
+func Watcher(command []string) (status bool, err error) {
+
+	cmd := exec.Command(command[0], command[1:]...)
+	err = cmd.Run()
+
+	if err == nil {
+		status = true
+	}
+
+	return status, err
+}
 
 func main() {
 
+	status := true
+
 	r := Result{
-		Pipeline:  os.Getenv("GO_PIPELINE_NAME"),
-		Pipecount: toInt(os.Getenv("GO_PIPELINE_COUNTER")),
-		Stage:  os.Getenv("GO_STAGE_NAME"),
+		Pipeline:   os.Getenv("GO_PIPELINE_NAME"),
+		Pipecount:  toInt(os.Getenv("GO_PIPELINE_COUNTER")),
+		Stage:      os.Getenv("GO_STAGE_NAME"),
 		Stagecount: toInt(os.Getenv("GO_STAGE_COUNTER")),
-		Jobname: os.Getenv("GO_JOB_NAME"),
-		Gitinfo: os.Getenv("GO_REVISION"),
-		Pass:    status,
+		Jobname:    os.Getenv("GO_JOB_NAME"),
+		Gitinfo:    os.Getenv("GO_REVISION"),
+		Pass:       status,
 	}
 
 	json, err := json.Marshal(r)
@@ -58,8 +71,8 @@ func main() {
 	fmt.Printf("\n\n\n lets do a GET for comparison:\n")
 	resp, err = http.Get("http://localhost:3000/results")
 	if err != nil {
-	   panic(err)
-	}	
+		panic(err)
+	}
 
 	fmt.Printf("client did GET, got response: %#v\n", resp)
 }
