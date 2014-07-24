@@ -10,6 +10,11 @@ import (
 	"time"
 )
 
+// The golang net/http standard library seems to insist
+// that we only run one webserver using ListenAndServer(),
+// as there is no way to shutdown the first or start a
+// second web server. Yuck. But for now, we just go with it.
+//
 var SingletonWebServer *WebServer
 var SingletonWebServerStarted bool
 
