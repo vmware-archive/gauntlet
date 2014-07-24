@@ -79,7 +79,7 @@ func (webserv *WebServer) Start() {
 }
 
 func (s *WebServer) Stop() {
-
+	// no-op due to singleton
 }
 
 func WaitUntilServerUp(addr string) {
