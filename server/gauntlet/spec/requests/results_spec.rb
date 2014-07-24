@@ -23,7 +23,6 @@ describe 'results lifecycle' do
 
     get '/results'
     resp = JSON.parse(response.body).fetch('results').first
-      puts "resp is #{resp}"
 
     expect(resp['pipeline']).to eq 'fake-pipe'
     expect(resp['pipecount']).to eq 42
