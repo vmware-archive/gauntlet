@@ -15,16 +15,16 @@ var SingletonWebServerStarted bool
 
 type WebServer struct {
 	Addr        string
-	ServerReady chan bool          // closed once server is listening on Addr
-	RequestStop chan bool          // send on this to tell server to shutdown
-	Done        chan bool          // recv on this to know that server is indeed shutdown
-	ReceivedReq chan *http.Request // pointers to all recv'd requests are sent here, if not nil
+	ServerReady chan bool // closed once server is listening on Addr
+	RequestStop chan bool // send on this to tell server to shutdown
+	Done        chan bool // recv on this to know that server is indeed shutdown
+	LastReqBody string
 }
 
-func (s *WebServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	fmt.Printf("WebServer::ServeHTTP running ...\n")
-	s.ReceivedReq <- r
-}
+//func (s *WebServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+//	fmt.Printf("WebServer::ServeHTTP running ...\n")
+//	s.ReceivedReq <- r
+//}
 
 func NewWebServer(addr string) *WebServer {
 
@@ -37,7 +37,6 @@ func NewWebServer(addr string) *WebServer {
 		ServerReady: make(chan bool),
 		RequestStop: make(chan bool),
 		Done:        make(chan bool),
-		ReceivedReq: make(chan *http.Request, 100),
 	}
 
 	return SingletonWebServer
@@ -50,24 +49,22 @@ func (webserv *WebServer) Start() {
 	}
 	SingletonWebServerStarted = true
 
-	fmt.Printf("\n top of StartWebServer\n")
+	//fmt.Printf("\n top of StartWebServer\n")
 
 	resultsHandler := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("resultsHandler running ...\n")
-		if webserv.ReceivedReq != nil {
-			webserv.ReceivedReq <- r
-		}
+		//fmt.Printf("resultsHandler running ...\n")
 
 		buf := bytes.NewBuffer(nil)
 		io.Copy(buf, r.Body)
-		fmt.Printf("server request r.Body = %s\n", buf)
-		//fmt.Fprintf(w, "Hello, %q", html.EscapeString(r.URL.Path))
-		fmt.Fprintf(w, "server got request body:, %s", string(buf.Bytes()))
+		bodyAsString := string(buf.Bytes())
+		fmt.Fprintf(w, "server got request body: '%s'\n", bodyAsString)
+		//fmt.Printf("server has bodyAsString: = %s\n", bodyAsString)
+
+		webserv.LastReqBody = bodyAsString
 	}
 
 	go func() {
 		http.HandleFunc("/results", resultsHandler)
-
 		fmt.Printf("listening on %s and responding to /results\n", webserv.Addr)
 		log.Fatal(http.ListenAndServe(webserv.Addr, nil))
 	}()
@@ -86,7 +83,7 @@ func WaitUntilServerUp(addr string) {
 		if PortIsBound(addr) {
 			return
 		}
-		fmt.Printf("WaitUntilServerUp: on attempt %d, sleep then try again\n", attempt)
+		//fmt.Printf("WaitUntilServerUp: on attempt %d, sleep then try again\n", attempt)
 		time.Sleep(50 * time.Millisecond)
 		attempt++
 		if attempt > 40 {

@@ -1,9 +1,6 @@
 package main
 
 import (
-	"bytes"
-	"fmt"
-	"io"
 	"os"
 	"testing"
 
@@ -18,6 +15,10 @@ import (
     watcher allows configuration of the http endpoint
 
 */
+
+func init() {
+	SetupFakeGoCdEnvVar()
+}
 
 func TestCaptureJobSuccessOrFailStatus(t *testing.T) {
 	cv.Convey("Given a pipeline job command to be run", t, func() {
@@ -45,25 +46,13 @@ func TestRecordEnvVariablesToHttpEndpoint(t *testing.T) {
 			addr := "localhost:3000"
 			webserv := NewWebServer(addr)
 			webserv.Start()
+			defer webserv.Stop()
 
-			SetupFakeGoCdEnvVar()
-
-			fmt.Printf("...before Watcher\n")
 			Watcher([]string{"/bin/echo", "hello", "gocd"})
-			fmt.Printf("...after Watcher\n")
 
-			lastReq := <-webserv.ReceivedReq
-			fmt.Printf(" ... recv'd lastReq\n")
-
-			fmt.Printf("%#v\n", lastReq)
-			cv.So(lastReq.Method, cv.ShouldEqual, "POST")
-			cv.So(lastReq.Host, cv.ShouldEqual, "localhost:3000")
-
-			body := bytes.NewBuffer(nil)
-			io.Copy(body, lastReq.Body)
-			bodystr := string(body.Bytes())
-			fmt.Printf("\n\n bodystr = '%s'\n", bodystr)
-			cv.So(bodystr, cv.ShouldNotEqual, "")
+			lastReq := webserv.LastReqBody
+			cv.So(lastReq, cv.ShouldNotEqual, "")
+			cv.So(lastReq, cv.ShouldEqual, `{"pipeline":"jasons-fake-pipe","pipecount":"5","stage":"defaultStage","stagecount":"1","jobname":"defaultJob","gitinfo":"2e35c516660344a37cb5094102eb6d0e4f0414cc","pass":true}`)
 		})
 	})
 }
