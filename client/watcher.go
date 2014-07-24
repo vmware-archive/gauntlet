@@ -6,10 +6,12 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 )
 
 type Result struct {
@@ -33,7 +35,6 @@ func toInt(a string) int {
 func Watcher(command []string) (status bool, err error) {
 
 	gauntletServer := os.Getenv("GAUNTLET_HTTP_SERVER")
-	fmt.Printf("in Watcher, gauntletServer = '%s'\n", gauntletServer)
 	if gauntletServer == "" {
 		return false, errors.New("watcher config error: GAUNTLET_HTTP_SERVER is not set")
 	}
@@ -82,4 +83,25 @@ func postToGauntlet(status bool, gauntletServer string) {
 
 	fmt.Printf("posted: %s\nresp.Status is '%s'\nBody is '%s'\n", json, resp.Status, string(body.Bytes()))
 
+}
+
+func main() {
+	command := os.Args[1:]
+	if len(command) < 1 {
+		log.Printf("watcher error: no command given. exiting 1.\n")
+		log.Printf("   usage: watcher <command> <optional_arg1>...\n")
+		log.Printf("   example: watcher run_test.sh arg1 arg2")
+		os.Exit(1)
+	}
+	status, err := Watcher(command)
+	if err != nil {
+		log.Printf("watcher error: '%s'\n", err)
+		os.Exit(1)
+	}
+	if status == false {
+		cmdstr := strings.Join(command, " ")
+		log.Printf("watcher error: executing my command line '%v' gave false status, exiting 1.\n", cmdstr)
+		os.Exit(1)
+	}
+	os.Exit(0)
 }
