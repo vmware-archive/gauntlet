@@ -1,7 +1,10 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io"
+	"os"
 	"testing"
 
 	cv "github.com/smartystreets/goconvey/convey"
@@ -39,12 +42,28 @@ func TestRecordEnvVariablesToHttpEndpoint(t *testing.T) {
 	cv.Convey("Given a pipeline job command to be run", t, func() {
 		cv.Convey("after watcher runs the job, watcher should record the GoCD env vars to an http endpoint", func() {
 
-			StartWebServer()
+			addr := "localhost:3000"
+			webserv := NewWebServer(addr)
+			webserv.Start()
 
+			SetupFakeGoCdEnvVar()
+
+			fmt.Printf("...before Watcher\n")
 			Watcher([]string{"/bin/echo", "hello", "gocd"})
+			fmt.Printf("...after Watcher\n")
 
-			fmt.Printf("%#v\n", LastServerRequest)
-			cv.So(LastServerRequest, cv.ShouldEqual, false)
+			lastReq := <-webserv.ReceivedReq
+			fmt.Printf(" ... recv'd lastReq\n")
+
+			fmt.Printf("%#v\n", lastReq)
+			cv.So(lastReq.Method, cv.ShouldEqual, "POST")
+			cv.So(lastReq.Host, cv.ShouldEqual, "localhost:3000")
+
+			body := bytes.NewBuffer(nil)
+			io.Copy(body, lastReq.Body)
+			bodystr := string(body.Bytes())
+			fmt.Printf("\n\n bodystr = '%s'\n", bodystr)
+			cv.So(bodystr, cv.ShouldNotEqual, "")
 		})
 	})
 }
@@ -60,4 +79,18 @@ func TestHttpEndpointConfig(t *testing.T) {
 	cv.Convey("watcher should allow configuration of http endpoint", t, func() {
 
 	})
+}
+
+func SetupFakeGoCdEnvVar() {
+	os.Setenv("GO_SERVER_URL", "https://10.10.48.5:8154/go/")
+	os.Setenv("GO_TRIGGER_USER", "releng")
+	os.Setenv("GO_PIPELINE_NAME", "jasons-fake-pipe")
+	os.Setenv("GO_PIPELINE_COUNTER", "5")
+	os.Setenv("GO_PIPELINE_LABEL", "5")
+	os.Setenv("GO_STAGE_NAME", "defaultStage")
+	os.Setenv("GO_STAGE_COUNTER", "1")
+	os.Setenv("GO_JOB_NAME", "defaultJob")
+	os.Setenv("GO_REVISION", "2e35c516660344a37cb5094102eb6d0e4f0414cc")
+	os.Setenv("GO_TO_REVISION", "2e35c516660344a37cb5094102eb6d0e4f0414cc")
+	os.Setenv("GO_FROM_REVISION", "2e35c516660344a37cb5094102eb6d0e4f0414cc")
 }

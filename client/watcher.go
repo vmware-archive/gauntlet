@@ -13,9 +13,9 @@ import (
 
 type Result struct {
 	Pipeline   string `json:"pipeline"`
-	Pipecount  int    `json:"pipecount"`
+	Pipecount  string `json:"pipecount"`
 	Stage      string `json:"stage"`
-	Stagecount int    `json:"stagecount"`
+	Stagecount string `json:"stagecount"`
 	Jobname    string `json:"jobname"`
 	Gitinfo    string `json:"gitinfo"`
 	Pass       bool   `json:"pass"`
@@ -38,18 +38,18 @@ func Watcher(command []string) (status bool, err error) {
 		status = true
 	}
 
+	postToGauntlet(status)
+
 	return status, err
 }
 
-func main() {
-
-	status := true
+func postToGauntlet(status bool) {
 
 	r := Result{
 		Pipeline:   os.Getenv("GO_PIPELINE_NAME"),
-		Pipecount:  toInt(os.Getenv("GO_PIPELINE_COUNTER")),
+		Pipecount:  os.Getenv("GO_PIPELINE_COUNTER"),
 		Stage:      os.Getenv("GO_STAGE_NAME"),
-		Stagecount: toInt(os.Getenv("GO_STAGE_COUNTER")),
+		Stagecount: os.Getenv("GO_STAGE_COUNTER"),
 		Jobname:    os.Getenv("GO_JOB_NAME"),
 		Gitinfo:    os.Getenv("GO_REVISION"),
 		Pass:       status,
@@ -59,20 +59,15 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	//fmt.Printf("json = %s\n", json)
-
+	fmt.Printf("json = %s\n", json)
 	resp, err := http.Post("http://localhost:3000/results", "application/json", bytes.NewBuffer(json))
+	if err != nil {
+		panic(err)
+	}
 
 	body := bytes.NewBuffer(nil)
 	io.Copy(body, resp.Body)
 
 	fmt.Printf("posted: %s\nresp.Status is '%s'\nBody is '%s'\n", json, resp.Status, string(body.Bytes()))
 
-	fmt.Printf("\n\n\n lets do a GET for comparison:\n")
-	resp, err = http.Get("http://localhost:3000/results")
-	if err != nil {
-		panic(err)
-	}
-
-	fmt.Printf("client did GET, got response: %#v\n", resp)
 }
