@@ -4,9 +4,14 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 
 	cv "github.com/smartystreets/goconvey/convey"
 )
+
+func pause() {
+	time.Sleep(5000 * time.Millisecond)
+}
 
 func TestCaptureJobSuccessOrNotStatus(t *testing.T) {
 	SetupFakeGoCdEnvVar()
@@ -34,6 +39,7 @@ func TestCaptureJobSuccessOrNotStatus(t *testing.T) {
 
 func TestRecordEnvVariablesToHttpEndpoint(t *testing.T) {
 	SetupFakeGoCdEnvVar()
+
 	cv.Convey("Given a pipeline job command to be run", t, func() {
 		cv.Convey("after watcher runs the job, watcher should record the GoCD env vars to an http endpoint", func() {
 

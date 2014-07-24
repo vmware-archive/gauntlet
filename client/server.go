@@ -12,6 +12,13 @@ import (
 	_ "net/http/pprof"
 )
 
+// Test cross-talk may require singleton server fixture;
+// this bool should be the only thing that needs to be set
+// to obtain the singleton test-web-server.
+var UseSingletonTestServer bool = true
+
+var SingletonTestServer *WebServer
+
 // profiler: visit http://localhost:6060/debug/pprof for runtime info
 /*
 func init() {
@@ -50,9 +57,16 @@ type WebServer struct {
 	SL          *StoppableListener
 	Server      http.Server
 	Mux         *http.ServeMux
+	Started     bool
 }
 
 func NewWebServer(addr string) *WebServer {
+
+	if UseSingletonTestServer {
+		if SingletonTestServer != nil {
+			return SingletonTestServer
+		}
+	}
 
 	originalListener, err := net.Listen("tcp", addr)
 	if err != nil {
@@ -75,6 +89,7 @@ func NewWebServer(addr string) *WebServer {
 	mux := http.NewServeMux()
 	ws.Server.Handler = mux
 	ws.Mux = mux
+	SingletonTestServer = ws
 	return ws
 }
 
@@ -92,6 +107,17 @@ func (webserv *WebServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 }
 
 func (webserv *WebServer) Start() *WebServer {
+	fmt.Printf("\n\n WebServer::Start() for %p\n", webserv)
+
+	if UseSingletonTestServer {
+		if SingletonTestServer == nil {
+			panic("SingletonTestServer should have been initialized before Start()")
+		}
+		if SingletonTestServer.Started {
+			return SingletonTestServer
+		}
+		SingletonTestServer.Started = true
+	}
 
 	//fmt.Printf("\n top of StartWebServer\n")
 	/*
@@ -126,6 +152,10 @@ func (webserv *WebServer) Start() *WebServer {
 }
 
 func (s *WebServer) Stop() {
+	if UseSingletonTestServer {
+		// the Stop() is a noop.
+		return
+	}
 	s.SL.Stop()
 	fmt.Printf("\n\n webserv::Stop() request sent, on %p \n\n", s)
 	<-s.Done
