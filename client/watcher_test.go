@@ -7,14 +7,10 @@ import (
 	cv "github.com/smartystreets/goconvey/convey"
 )
 
-func SetupServer() {
-
-}
-
 func TestCaptureJobSuccessOrNotStatus(t *testing.T) {
 	SetupFakeGoCdEnvVar()
-	NewWebServer("localhost:3000").Start()
-
+	ws := NewWebServer("localhost:3000").Start()
+	defer ws.Stop()
 	cv.Convey("Given a pipeline job command to be run", t, func() {
 		cv.Convey("when the Watcher runs the job, success should be noted correctly", func() {
 
@@ -38,12 +34,12 @@ func TestRecordEnvVariablesToHttpEndpoint(t *testing.T) {
 	cv.Convey("Given a pipeline job command to be run", t, func() {
 		cv.Convey("after watcher runs the job, watcher should record the GoCD env vars to an http endpoint", func() {
 
-			webserv := NewWebServer("localhost:3000").Start()
+			ws := NewWebServer("localhost:3000").Start()
+			defer ws.Stop()
 
 			Watcher([]string{"/bin/echo", "hello", "gocd"})
 
-			lastReq := webserv.LastReqBody
-			cv.So(lastReq, cv.ShouldNotEqual, "")
+			lastReq := ws.LastReqBody
 			cv.So(lastReq, cv.ShouldEqual, `{"pipeline":"jasons-fake-pipe","pipecount":"5","stage":"defaultStage","stagecount":"1","jobname":"defaultJob","gitinfo":"2e35c516660344a37cb5094102eb6d0e4f0414cc","pass":true}`)
 		})
 	})
@@ -53,18 +49,17 @@ func TestMissingEnvVariables(t *testing.T) {
 	cv.Convey("Given missing GoCD env variables", t, func() {
 		cv.Convey("watcher should record what GoCD env vars that are present, and not crash", func() {
 			ClearFakeGoCdEnvVar()
-			webserv := NewWebServer("localhost:3000").Start()
+			ws := NewWebServer("localhost:3000").Start()
+			defer ws.Stop()
 
 			Watcher([]string{"/bin/echo", "hello", "gocd"})
 
-			lastReq := webserv.LastReqBody
-			cv.So(lastReq, cv.ShouldNotEqual, "")
+			lastReq := ws.LastReqBody
 			cv.So(lastReq, cv.ShouldEqual, `{"pipeline":"","pipecount":"","stage":"","stagecount":"","jobname":"","gitinfo":"","pass":true}`)
 
 			Watcher([]string{"/bin/non-existant-binary-tried", "hello", "gocd"})
 
-			lastReq = webserv.LastReqBody
-			cv.So(lastReq, cv.ShouldNotEqual, "")
+			lastReq = ws.LastReqBody
 			cv.So(lastReq, cv.ShouldEqual, `{"pipeline":"","pipecount":"","stage":"","stagecount":"","jobname":"","gitinfo":"","pass":false}`)
 
 		})
