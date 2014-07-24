@@ -47,10 +47,10 @@ func NewWebServer(addr string) *WebServer {
 	return SingletonWebServer
 }
 
-func (webserv *WebServer) Start() {
+func (webserv *WebServer) Start() *WebServer {
 
 	if SingletonWebServerStarted {
-		return
+		return webserv
 	}
 	SingletonWebServerStarted = true
 
@@ -76,6 +76,7 @@ func (webserv *WebServer) Start() {
 
 	WaitUntilServerUp(webserv.Addr)
 	close(webserv.ServerReady)
+	return webserv
 }
 
 func (s *WebServer) Stop() {

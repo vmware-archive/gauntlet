@@ -59,7 +59,7 @@ func postToGauntlet(status bool) {
 	if err != nil {
 		panic(err)
 	}
-	fmt.Printf("json = %s\n", json)
+	//fmt.Printf("json = %s\n", json)
 	resp, err := http.Post("http://localhost:3000/results", "application/json", bytes.NewBuffer(json))
 	if err != nil {
 		panic(err)

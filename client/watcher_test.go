@@ -7,17 +7,14 @@ import (
 	cv "github.com/smartystreets/goconvey/convey"
 )
 
-/*
- When I run a job,
-    watcher errors with a helpful error message when called without a command
-    watcher records the env variable settings at a http endpoint
-    watcher handles missing env variables
-    watcher allows configuration of the http endpoint
+func SetupServer() {
 
-*/
+}
 
 func TestCaptureJobSuccessOrNotStatus(t *testing.T) {
 	SetupFakeGoCdEnvVar()
+	NewWebServer("localhost:3000").Start()
+
 	cv.Convey("Given a pipeline job command to be run", t, func() {
 		cv.Convey("when the Watcher runs the job, success should be noted correctly", func() {
 
@@ -41,10 +38,7 @@ func TestRecordEnvVariablesToHttpEndpoint(t *testing.T) {
 	cv.Convey("Given a pipeline job command to be run", t, func() {
 		cv.Convey("after watcher runs the job, watcher should record the GoCD env vars to an http endpoint", func() {
 
-			addr := "localhost:3000"
-			webserv := NewWebServer(addr)
-			webserv.Start()
-			defer webserv.Stop()
+			webserv := NewWebServer("localhost:3000").Start()
 
 			Watcher([]string{"/bin/echo", "hello", "gocd"})
 
@@ -59,11 +53,7 @@ func TestMissingEnvVariables(t *testing.T) {
 	cv.Convey("Given missing GoCD env variables", t, func() {
 		cv.Convey("watcher should record what GoCD env vars that are present, and not crash", func() {
 			ClearFakeGoCdEnvVar()
-
-			addr := "localhost:3000"
-			webserv := NewWebServer(addr)
-			webserv.Start()
-			defer webserv.Stop()
+			webserv := NewWebServer("localhost:3000").Start()
 
 			Watcher([]string{"/bin/echo", "hello", "gocd"})
 
