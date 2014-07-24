@@ -12,11 +12,21 @@ import (
 	_ "net/http/pprof"
 )
 
+// profiler: visit http://localhost:6060/debug/pprof for runtime info
 /*
-writeup:
+func init() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
+}
+*/
+
+/*
+Portions of the code in this file are derived from source code that is licensed as follows:
+
+writeup of stoppableListener approach:
 http://www.hydrogen18.com/blog/stop-listening-http-server-go.html
 
-Portions of the code in this file are derived from source code that is licensed as follows:
 
 Copyright (c) 2014, Eric Urban
 All rights reserved.
@@ -68,33 +78,47 @@ func NewWebServer(addr string) *WebServer {
 	return ws
 }
 
+func (webserv *WebServer) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+
+	fmt.Printf("resultsHandler (on %p) for %s running ...\n", webserv, webserv.Addr)
+
+	buf := bytes.NewBuffer(nil)
+	io.Copy(buf, r.Body)
+	bodyAsString := string(buf.Bytes())
+	fmt.Fprintf(w, "server got request body: '%s'\n", bodyAsString)
+	fmt.Printf("server %p has bodyAsString: = %s\n", webserv, bodyAsString)
+
+	webserv.LastReqBody = bodyAsString
+}
+
 func (webserv *WebServer) Start() *WebServer {
 
 	//fmt.Printf("\n top of StartWebServer\n")
+	/*
+		resultsHandler := func(w http.ResponseWriter, r *http.Request) {
+			fmt.Printf("resultsHandler for %s running ...\n", webserv.Addr)
 
-	resultsHandler := func(w http.ResponseWriter, r *http.Request) {
-		fmt.Printf("resultsHandler for %s running ...\n", webserv.Addr)
+			buf := bytes.NewBuffer(nil)
+			io.Copy(buf, r.Body)
+			bodyAsString := string(buf.Bytes())
+			fmt.Fprintf(w, "server got request body: '%s'\n", bodyAsString)
+			fmt.Printf("server %p has bodyAsString: = %s\n", webserv, bodyAsString)
 
-		buf := bytes.NewBuffer(nil)
-		io.Copy(buf, r.Body)
-		bodyAsString := string(buf.Bytes())
-		fmt.Fprintf(w, "server got request body: '%s'\n", bodyAsString)
-		fmt.Printf("server has bodyAsString: = %s\n", bodyAsString)
+			webserv.LastReqBody = bodyAsString
+		}
+	*/
+	//webserv.Mux.HandleFunc("/results", resultsHandler)
+	webserv.Mux.Handle("/results", webserv)
 
-		webserv.LastReqBody = bodyAsString
-	}
+	go func(ws *WebServer) {
 
-	go func() {
-
-		webserv.Mux.HandleFunc("/results", resultsHandler)
-
-		fmt.Printf("listening on %s and responding to /results\n", webserv.Addr)
+		fmt.Printf("listening on %s and responding to /results\n", ws.Addr)
 		// blocks until webserv.SL.Stop()
-		webserv.Server.Serve(webserv.SL)
-		fmt.Printf("\n\n 88888888888 !!! webserv.Manners has returned !!! 888888888888 \n\n")
+		ws.Server.Serve(webserv.SL)
+		fmt.Printf("\n\n 88888888888 !!! webserv( %p  ).Server.Serve() has returned !!! 888888888888 \n\n", ws)
 
 		close(webserv.Done)
-	}()
+	}(webserv)
 
 	WaitUntilServerUp(webserv.Addr)
 	close(webserv.ServerReady)
@@ -103,8 +127,9 @@ func (webserv *WebServer) Start() *WebServer {
 
 func (s *WebServer) Stop() {
 	s.SL.Stop()
-	fmt.Printf("\n\n webserv::Stop() request sent \n\n")
+	fmt.Printf("\n\n webserv::Stop() request sent, on %p \n\n", s)
 	<-s.Done
+	WaitUntilServerDown(s.Addr)
 }
 
 func WaitUntilServerUp(addr string) {
@@ -118,6 +143,21 @@ func WaitUntilServerUp(addr string) {
 		attempt++
 		if attempt > 40 {
 			panic(fmt.Sprintf("could not connect to server at '%s' after 40 tries of 50msec", addr))
+		}
+	}
+}
+
+func WaitUntilServerDown(addr string) {
+	attempt := 1
+	for {
+		if !PortIsBound(addr) {
+			return
+		}
+		//fmt.Printf("WaitUntilServerUp: on attempt %d, sleep then try again\n", attempt)
+		time.Sleep(50 * time.Millisecond)
+		attempt++
+		if attempt > 40 {
+			panic(fmt.Sprintf("could always connect to server at '%s' after 40 tries of 50msec", addr))
 		}
 	}
 }

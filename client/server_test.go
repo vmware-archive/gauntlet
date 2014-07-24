@@ -1,19 +1,10 @@
 package main
 
 import (
-	"log"
-	"net/http"
 	"testing"
 
 	cv "github.com/smartystreets/goconvey/convey"
 )
-
-// profiler: visit http://localhost:6060/debug/pprof for runtime info
-func init() {
-	go func() {
-		log.Println(http.ListenAndServe("localhost:6060", nil))
-	}()
-}
 
 func TestWebServerReturnsOnlyWhenItIsReachable(t *testing.T) {
 	addr := "localhost:3000"

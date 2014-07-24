@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -29,17 +30,21 @@ func TestCaptureJobSuccessOrNotStatus(t *testing.T) {
 	})
 }
 
+// odd: test pollution between the test above and the one below happening...
+
 func TestRecordEnvVariablesToHttpEndpoint(t *testing.T) {
 	SetupFakeGoCdEnvVar()
 	cv.Convey("Given a pipeline job command to be run", t, func() {
 		cv.Convey("after watcher runs the job, watcher should record the GoCD env vars to an http endpoint", func() {
 
 			ws := NewWebServer("localhost:3000").Start()
+			fmt.Printf("1st ws = %p\n", ws)
 			defer ws.Stop()
 
 			Watcher([]string{"/bin/echo", "hello", "gocd"})
 
 			lastReq := ws.LastReqBody
+			fmt.Printf("2nd ws = %p\n", ws)
 			cv.So(lastReq, cv.ShouldEqual, `{"pipeline":"jasons-fake-pipe","pipecount":"5","stage":"defaultStage","stagecount":"1","jobname":"defaultJob","gitinfo":"2e35c516660344a37cb5094102eb6d0e4f0414cc","pass":true}`)
 		})
 	})
