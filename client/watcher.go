@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -31,6 +32,16 @@ func toInt(a string) int {
 
 func Watcher(command []string) (status bool, err error) {
 
+	gauntletServer := os.Getenv("GAUNTLET_HTTP_SERVER")
+	fmt.Printf("in Watcher, gauntletServer = '%s'\n", gauntletServer)
+	if gauntletServer == "" {
+		return false, errors.New("watcher config error: GAUNTLET_HTTP_SERVER is not set")
+	}
+
+	if !PortIsBound(gauntletServer) {
+		return false, fmt.Errorf("watcher config error: GAUNTLET_HTTP_SERVER cannot be contacted on '%s'", gauntletServer)
+	}
+
 	cmd := exec.Command(command[0], command[1:]...)
 	err = cmd.Run()
 
@@ -38,12 +49,12 @@ func Watcher(command []string) (status bool, err error) {
 		status = true
 	}
 
-	postToGauntlet(status)
+	postToGauntlet(status, gauntletServer)
 
 	return status, err
 }
 
-func postToGauntlet(status bool) {
+func postToGauntlet(status bool, gauntletServer string) {
 
 	r := Result{
 		Pipeline:   os.Getenv("GO_PIPELINE_NAME"),
@@ -60,7 +71,8 @@ func postToGauntlet(status bool) {
 		panic(err)
 	}
 	//fmt.Printf("json = %s\n", json)
-	resp, err := http.Post("http://localhost:3000/results", "application/json", bytes.NewBuffer(json))
+
+	resp, err := http.Post("http://"+gauntletServer+"/results", "application/json", bytes.NewBuffer(json))
 	if err != nil {
 		panic(err)
 	}
