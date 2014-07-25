@@ -14,10 +14,6 @@ func TestWebServerReturnsOnlyWhenItIsReachable(t *testing.T) {
 			webserv.Start()
 			defer webserv.Stop()
 			cv.So(PortIsBound(addr), cv.ShouldEqual, true)
-			//			url := "http://" + addr + "/results"
-			//			resp, err := http.Get(url)
-			//			fmt.Printf("http GET from '%s' returned err='%s' response='%s'\n", url, err, resp)
-			//			cv.So(err, cv.ShouldEqual, nil)
 		})
 	})
 }
