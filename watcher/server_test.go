@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"testing"
 
 	cv "github.com/smartystreets/goconvey/convey"
@@ -40,16 +39,5 @@ func TestWebServerShutsdownWhenRequested(t *testing.T) {
 			webserv.Stop()
 			cv.So(PortIsBound(addr), cv.ShouldEqual, false)
 		})
-	})
-}
-
-
-func TestTigerTonic(t *testing.T) {
-	cv.Convey("TigerTonic should be shutdown after example runs", t, func() {
-		s := exampleTigerTonic()
-		fmt.Printf("TigerTonic bound '%s'\n", s.Addr)
-		cv.So(PortIsBound(s.Addr), cv.ShouldEqual, true)
-		s.Close()
-		cv.So(PortIsBound(s.Addr), cv.ShouldEqual, false)
 	})
 }
