@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"testing"
 
 	cv "github.com/smartystreets/goconvey/convey"
@@ -30,28 +31,25 @@ func TestWebServerShutsdownWhenRequested(t *testing.T) {
 			webserv.Start()
 			cv.So(PortIsBound(addr), cv.ShouldEqual, true)
 			webserv.Stop()
-			if !UseSingletonTestServer {
-				cv.So(PortIsBound(addr), cv.ShouldEqual, false)
-			}
+			cv.So(PortIsBound(addr), cv.ShouldEqual, false)
+
 			// and again right away
 			webserv = NewWebServer(addr)
 			webserv.Start()
 			cv.So(PortIsBound(addr), cv.ShouldEqual, true)
 			webserv.Stop()
-			if !UseSingletonTestServer {
-				cv.So(PortIsBound(addr), cv.ShouldEqual, false)
-			}
+			cv.So(PortIsBound(addr), cv.ShouldEqual, false)
 		})
 	})
 }
 
-func TestWebServerSingletonFlagWorks(t *testing.T) {
-	cv.Convey("Given that the UseSingletonTestServer flag is true", t, func() {
-		cv.Convey("all NewWebServer() calls should return the same instance", func() {
-			addr := "localhost:3000"
-			webserv := NewWebServer(addr)
-			webserv2 := NewWebServer(addr)
-			cv.So(webserv2, cv.ShouldEqual, webserv)
-		})
+
+func TestTigerTonic(t *testing.T) {
+	cv.Convey("TigerTonic should be shutdown after example runs", t, func() {
+		s := exampleTigerTonic()
+		fmt.Printf("TigerTonic bound '%s'\n", s.Addr)
+		cv.So(PortIsBound(s.Addr), cv.ShouldEqual, true)
+		s.Close()
+		cv.So(PortIsBound(s.Addr), cv.ShouldEqual, false)
 	})
 }
