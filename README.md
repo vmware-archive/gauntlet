@@ -1,6 +1,8 @@
 #Gauntlet
 
-## A CI results system
+A CI results system, written to record the results of [GoCD](http://www.go.cd/) tests.
+
+## Gauntlet (Rails Server)
 
 ### Results
 
@@ -65,5 +67,21 @@ Request:
 
 ```
 curl $HOST/results
+```
+
+## Watcher (binary linux executable client)
+
+####Required environmental variable:
+
+```
+export GAUNTLET_HTTP_SERVER=example.com:80
+```
+
+Recorded (optional) environmental variables, typically set by GoCD: (see Server 'Record a test result' above)
+
+####usage from the command prompt:
+
+```
+$ watcher ./my-test-script.sh optional_arg1 optional_arg2
 ```
 
